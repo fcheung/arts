@@ -26,19 +26,19 @@ module Arts
     unless content.blank?
       case content
         when Regexp
-          assert_match Regexp.new("new Insertion\.#{position.to_s.camelize}(.*#{item_id}.*,.*#{content.source}.*);"),
+          assert_match Regexp.new("Element.insert\\(.*#{item_id}.*, \\{ #{position}:.*#{content.source}.*\\}\\);"),
                        @response.body
         when String
-          assert_response_contains("new Insertion.#{position.to_s.camelize}(\"#{item_id}\", #{content});",
+          assert lined_response.include?("Element.insert(\"#{item_id}\", { #{position}: #{content} });"),
                  "No insert_html call found for \n" +
                  "     position: '#{position}' id: '#{item_id}' \ncontent: \n" +
                  "#{content}\n" +
-                 "in response:\n#{@response.body}")
+                 "in response:\n#{lined_response}"
         else
           raise "Invalid content type"
       end
     else
-      assert_match Regexp.new("new Insertion\.#{position.to_s.camelize}(.*#{item_id}.*,.*?);"), 
+      assert_match Regexp.new("Element.insert\\(.*#{item_id}.*, \\{ #{position}: .*?\\}\\);"), 
                    @response.body
     end
   end
@@ -53,7 +53,7 @@ module Arts
           assert_match Regexp.new("Element.update(.*#{div}.*,.*#{content.source}.*);"),
                        @response.body
         when String
-          assert_response_contains("Element.update(\"#{div}\", #{content});", 
+          assert_response_contains("Element.update(\"#{div}\", \"#{ERB::Util.json_escape content}\");", 
                  "No replace_html call found on div: '#{div}' and content: \n#{content}\n" +
                  "in response:\n#{@response.body}")
         else
@@ -74,7 +74,7 @@ module Arts
           assert_match Regexp.new("Element.replace(.*#{div}.*,.*#{content.source}.*);"),
                        @response.body
         when String
-          assert_response_contains("Element.replace(\"#{div}\", #{content});", 
+          assert_response_contains("Element.replace(\"#{div}\", \"#{ERB::Util.json_escape content}\");", 
                  "No replace call found on div: '#{div}' and content: \n#{content}\n" +
                  "in response:\n#{@response.body}")
         else
@@ -92,10 +92,17 @@ module Arts
                  "Content did not include:\n #{content.to_s}"
   end
   
+  def with_output_buffer(string)
+    yield
+  end
   protected
   
+  def lined_response
+    @response.body.split("\n")
+  end
+  
   def assert_response_contains(str, message)
-     assert @response.body.to_s.index(str), message
+    assert @response.body.to_s.index(str), message
   end
   
   def build_method_chain!(args)

@@ -1,15 +1,13 @@
 $:.unshift(File.dirname(__FILE__) + '/../lib')
-
-require File.dirname(__FILE__) + '/../../../../config/environment'
 require 'test/unit'
 require 'rubygems'
-require 'breakpoint'
-
+require 'active_support'
+require 'action_controller'
 require 'action_controller/test_process'
-
 ActionController::Base.logger = nil
-ActionController::Base.ignore_missing_templates = false
 ActionController::Routing::Routes.reload rescue nil
+require 'arts'
+require File.dirname(__FILE__) + '/../init'
 
 class ArtsController < ActionController::Base
   def alert
@@ -280,11 +278,11 @@ class ArtsTest < Test::Unit::TestCase
       # No content matching
       assert_rjs :replace, 'person_45'
       # String content matching
-      assert_rjs :replace, 'person_45', '<div>This replaces person_45</div>'
+      assert_rjs :replace, 'person_45', "<div>This replaces person_45</div>"
       # regexp content matching
-      assert_rjs :replace, 'person_45', /<div>.*person_45.*<\/div>/
+      assert_rjs :replace, 'person_45', /\\u003Cdiv\\u003E.*person_45.*\\u003C\/div\\u003E/
       
-      assert_no_rjs :replace, 'person_45', '<div>This replaces person_46</div>'
+      assert_no_rjs :replace, 'person_45', "<div>This replaces person_46</div>"
       
       assert_no_rjs :replace, 'person_45', /person_46/
     end
@@ -398,5 +396,9 @@ class ArtsTest < Test::Unit::TestCase
       assert_no_rjs :page, 'some_id', :style, :color=, 'red'
       assert_rjs :page, 'some_other_id', :style, :color=, 'red'
     end
+  end
+  
+  def protect_against_forgery?
+    false
   end
 end
